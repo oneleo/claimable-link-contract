@@ -128,3 +128,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Foundry files
+broadcast/
+cache/
+
+# Other files
+.DS_Store
