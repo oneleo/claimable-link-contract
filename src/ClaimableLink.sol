@@ -12,18 +12,12 @@ import {EIP712} from "@oz/utils/cryptography/EIP712.sol";
 
 import {IClaimableLink} from "src/interfaces/IClaimableLink.sol";
 
-contract ClaimableLink is
-    IClaimableLink,
-    Ownable2Step,
-    ReentrancyGuard,
-    EIP712
-{
+contract ClaimableLink is IClaimableLink, Ownable2Step, ReentrancyGuard, EIP712 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     string private constant SIGNING_DOMAIN = "ClaimableLink";
     string private constant SIGNATURE_VERSION = "1";
-    address private constant NATIVE_TOKEN_ADDRESS =
-        address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    address private constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     // -----------------------
     // -- Private Variables --
@@ -33,8 +27,7 @@ contract ClaimableLink is
     mapping(address signer => bool isActivated) private _isActivatedSigner;
 
     // Mapping of deposits by giver, token, and transferID
-    mapping(address giver => mapping(address token => mapping(address transferID => Deposit deposit)))
-        private _deposits;
+    mapping(address giver => mapping(address token => mapping(address transferID => Deposit deposit))) private _deposits;
 
     // List of activated signers
     EnumerableSet.AddressSet private _signerSet;
@@ -44,10 +37,7 @@ contract ClaimableLink is
     // -----------------
 
     // Initializes the contract with admin and signers
-    constructor(
-        address _admin,
-        address[] memory _signers
-    ) Ownable(_admin) EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
+    constructor(address _admin, address[] memory _signers) Ownable(_admin) EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
         bool[] memory isActivatedList = new bool[](_signers.length);
         for (uint256 i = 0; i < _signers.length; i++) {
             isActivatedList[i] = true;
@@ -60,31 +50,24 @@ contract ClaimableLink is
     // -------------------
 
     // Checks if a signer is activated
-    function isSignerActivated(
-        address _signer
-    ) external view override returns (bool isActivated) {
+    function isSignerActivated(address _signer) external view override returns (bool isActivated) {
         return _isActivatedSigner[_signer];
     }
 
     // Retrieves deposit details for a given giver, token, and transfer ID
-    function getDeposit(
-        address _giver,
-        address _token,
-        address _transferID
-    ) external view override returns (Deposit memory) {
+    function getDeposit(address _giver, address _token, address _transferID)
+        external
+        view
+        override
+        returns (Deposit memory)
+    {
         return _deposits[_giver][_token][_transferID];
     }
 
     // Verifies if a deposit is claimable based on status and expiration
-    function isClaimable(
-        address _giver,
-        address _token,
-        address _transferID
-    ) public view override returns (bool) {
+    function isClaimable(address _giver, address _token, address _transferID) public view override returns (bool) {
         Deposit memory depositNote = _deposits[_giver][_token][_transferID];
-        return
-            depositNote.depositStatus == DepositStatus.Deposited &&
-            depositNote.expiration >= uint64(block.timestamp);
+        return depositNote.depositStatus == DepositStatus.Deposited && depositNote.expiration >= uint64(block.timestamp);
     }
 
     // Retrieves the list of all signers
@@ -93,12 +76,11 @@ contract ClaimableLink is
     }
 
     // Generates claim hash based on input parameters
-    function getClaimHash(
-        address _giver,
-        address _token,
-        address _transferID,
-        address _recipient
-    ) public pure returns (bytes32) {
+    function getClaimHash(address _giver, address _token, address _transferID, address _recipient)
+        public
+        pure
+        returns (bytes32)
+    {
         return keccak256(abi.encode(_giver, _token, _transferID, _recipient));
     }
 
@@ -108,38 +90,28 @@ contract ClaimableLink is
     }
 
     // EIP-712: Creates deposit hash for signing
-    function getEIP712DepositHash(
-        DepositSig memory _sig
-    ) public pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    keccak256(
-                        "DepositSig(address token,uint256 transferID,uint256 amount,uint64 expiration)"
-                    ),
-                    _sig.token,
-                    _sig.transferID,
-                    _sig.amount,
-                    _sig.expiration
-                )
-            );
+    function getEIP712DepositHash(DepositSig memory _sig) public pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                keccak256("DepositSig(address token,uint256 transferID,uint256 amount,uint64 expiration)"),
+                _sig.token,
+                _sig.transferID,
+                _sig.amount,
+                _sig.expiration
+            )
+        );
     }
 
     // EIP-712: Creates claim hash for signing
-    function getEIP712ClaimHash(
-        ClaimSig memory _sig
-    ) public pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    keccak256(
-                        "ClaimSig(address token,uint256 transferID,address recipient)"
-                    ),
-                    _sig.token,
-                    _sig.transferID,
-                    _sig.recipient
-                )
-            );
+    function getEIP712ClaimHash(ClaimSig memory _sig) public pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                keccak256("ClaimSig(address token,uint256 transferID,address recipient)"),
+                _sig.token,
+                _sig.transferID,
+                _sig.recipient
+            )
+        );
     }
 
     // -------------------
@@ -147,22 +119,22 @@ contract ClaimableLink is
     // -------------------
 
     // Updates the list of signers and their activation status
-    function updateSigners(
-        address[] calldata _signerList,
-        bool[] calldata _isActivatedList
-    ) external override onlyOwner {
+    function updateSigners(address[] calldata _signerList, bool[] calldata _isActivatedList)
+        external
+        override
+        onlyOwner
+    {
         return _updateSigners(_signerList, _isActivatedList);
     }
 
     // Handles deposit of funds from the giver
-    function deposit(
-        address _token,
-        address _transferID,
-        uint256 _amount,
-        uint64 _expiration
-    ) external payable override nonReentrant {
-        return
-            _deposit(_msgSender(), _token, _transferID, _amount, _expiration);
+    function deposit(address _token, address _transferID, uint256 _amount, uint64 _expiration)
+        external
+        payable
+        override
+        nonReentrant
+    {
+        return _deposit(_msgSender(), _token, _transferID, _amount, _expiration);
     }
 
     // Handles claim of deposited funds
@@ -187,31 +159,18 @@ contract ClaimableLink is
         bytes calldata _giverDepositSignature,
         bytes calldata _signerSignature
     ) external override nonReentrant {
-        require(
-            _token != NATIVE_TOKEN_ADDRESS,
-            DepositSupportsERC20Only(_giver, _token, _transferID)
-        );
+        require(_token != NATIVE_TOKEN_ADDRESS, DepositSupportsERC20Only(_giver, _token, _transferID));
 
         bytes32 eip712SignedDepositHash = _hashTypedDataV4(
             getEIP712DepositHash(
-                DepositSig({
-                    token: _token,
-                    transferID: _transferID,
-                    amount: _amount,
-                    expiration: _expiration
-                })
+                DepositSig({token: _token, transferID: _transferID, amount: _amount, expiration: _expiration})
             )
         );
-        require(
-            _giver ==
-                ECDSA.recover(eip712SignedDepositHash, _giverDepositSignature),
-            InvalidGiverSignature(_giver)
-        );
+        require(_giver == ECDSA.recover(eip712SignedDepositHash, _giverDepositSignature), InvalidGiverSignature(_giver));
 
         _deposit(_giver, _token, _transferID, _amount, _expiration);
 
-        return
-            _claim(_giver, _token, _transferID, _recipient, _signerSignature);
+        return _claim(_giver, _token, _transferID, _recipient, _signerSignature);
     }
 
     // Handles claim with direct authorization
@@ -222,47 +181,23 @@ contract ClaimableLink is
         address payable _recipient,
         bytes calldata _giverSignature
     ) external override nonReentrant {
-        require(
-            isClaimable(_giver, _token, _transferID),
-            DepositNotClaimable(_giver, _token, _transferID)
-        );
+        require(isClaimable(_giver, _token, _transferID), DepositNotClaimable(_giver, _token, _transferID));
 
         Deposit storage depositNote = _deposits[_giver][_token][_transferID];
 
         bytes32 eip712SignedClaimHash = _hashTypedDataV4(
-            getEIP712ClaimHash(
-                ClaimSig({
-                    token: _token,
-                    transferID: _transferID,
-                    recipient: _recipient
-                })
-            )
+            getEIP712ClaimHash(ClaimSig({token: _token, transferID: _transferID, recipient: _recipient}))
         );
-        require(
-            _giver == ECDSA.recover(eip712SignedClaimHash, _giverSignature),
-            InvalidGiverSignature(_giver)
-        );
+        require(_giver == ECDSA.recover(eip712SignedClaimHash, _giverSignature), InvalidGiverSignature(_giver));
 
         depositNote.depositStatus = DepositStatus.Claimed;
         _claimToken(_token, _recipient, depositNote.amount);
-        emit Claimed(
-            _giver,
-            _token,
-            _transferID,
-            depositNote.amount,
-            _recipient,
-            _giver
-        );
+        emit Claimed(_giver, _token, _transferID, depositNote.amount, _recipient, _giver);
     }
 
     // Cancels a deposit and returns the funds
-    function cancel(
-        address _token,
-        address _transferID
-    ) external override nonReentrant {
-        Deposit storage depositNote = _deposits[_msgSender()][_token][
-            _transferID
-        ];
+    function cancel(address _token, address _transferID) external override nonReentrant {
+        Deposit storage depositNote = _deposits[_msgSender()][_token][_transferID];
 
         if (depositNote.depositStatus == DepositStatus.NotDepositedYet) {
             depositNote.token = _token;
@@ -280,15 +215,10 @@ contract ClaimableLink is
     }
 
     // Refunds expired deposits to the giver
-    function refund(
-        address payable _giver,
-        address _token,
-        address _transferID
-    ) external override nonReentrant {
+    function refund(address payable _giver, address _token, address _transferID) external override nonReentrant {
         Deposit storage depositNote = _deposits[_giver][_token][_transferID];
         require(
-            depositNote.depositStatus == DepositStatus.Deposited &&
-                depositNote.expiration < uint64(block.timestamp),
+            depositNote.depositStatus == DepositStatus.Deposited && depositNote.expiration < uint64(block.timestamp),
             DepositNotExpired(_giver, _token, _transferID)
         );
 
@@ -303,14 +233,8 @@ contract ClaimableLink is
     // -----------------------
 
     // Updates signers list
-    function _updateSigners(
-        address[] memory _signerList,
-        bool[] memory _isActivatedList
-    ) private {
-        require(
-            _signerList.length == _isActivatedList.length,
-            MismatchInInputLengths()
-        );
+    function _updateSigners(address[] memory _signerList, bool[] memory _isActivatedList) private {
+        require(_signerList.length == _isActivatedList.length, MismatchInInputLengths());
 
         for (uint256 i = 0; i < _signerList.length; i++) {
             address signer = _signerList[i];
@@ -340,18 +264,13 @@ contract ClaimableLink is
     }
 
     // Handles deposits: ETH or ERC20 tokens
-    function _deposit(
-        address _giver,
-        address _token,
-        address _transferID,
-        uint256 _amount,
-        uint64 _expiration
-    ) private {
+    function _deposit(address _giver, address _token, address _transferID, uint256 _amount, uint64 _expiration)
+        private
+    {
         Deposit storage depositNote = _deposits[_giver][_token][_transferID];
 
         require(
-            depositNote.depositStatus == DepositStatus.NotDepositedYet,
-            DepositAlreadyMade(_giver, _token, _transferID)
+            depositNote.depositStatus == DepositStatus.NotDepositedYet, DepositAlreadyMade(_giver, _token, _transferID)
         );
 
         if (_token == NATIVE_TOKEN_ADDRESS) {
@@ -361,17 +280,9 @@ contract ClaimableLink is
 
         if (_token != NATIVE_TOKEN_ADDRESS) {
             // Deposit ERC20 token
-            require(
-                msg.value == 0,
-                DepositTokenMismatch(_giver, _token, _transferID)
-            );
+            require(msg.value == 0, DepositTokenMismatch(_giver, _token, _transferID));
 
-            SafeERC20.safeTransferFrom(
-                IERC20(_token),
-                _giver,
-                address(this),
-                _amount
-            );
+            SafeERC20.safeTransferFrom(IERC20(_token), _giver, address(this), _amount);
         }
 
         depositNote.token = _token;
@@ -390,22 +301,12 @@ contract ClaimableLink is
         address payable _recipient,
         bytes memory _signerSignature
     ) private {
-        require(
-            isClaimable(_giver, _token, _transferID),
-            DepositNotClaimable(_giver, _token, _transferID)
-        );
+        require(isClaimable(_giver, _token, _transferID), DepositNotClaimable(_giver, _token, _transferID));
 
         Deposit storage depositNote = _deposits[_giver][_token][_transferID];
 
-        bytes32 claimHash = getClaimHash(
-            _giver,
-            _token,
-            _transferID,
-            _recipient
-        );
-        bytes32 ethSignedClaimHash = MessageHashUtils.toEthSignedMessageHash(
-            claimHash
-        );
+        bytes32 claimHash = getClaimHash(_giver, _token, _transferID, _recipient);
+        bytes32 ethSignedClaimHash = MessageHashUtils.toEthSignedMessageHash(claimHash);
         address signer = ECDSA.recover(ethSignedClaimHash, _signerSignature);
         require(_isActivatedSigner[signer], InvalidSignerSignature(signer));
 
@@ -413,22 +314,11 @@ contract ClaimableLink is
 
         _claimToken(_token, _recipient, depositNote.amount);
 
-        emit Claimed(
-            _giver,
-            _token,
-            _transferID,
-            depositNote.amount,
-            _recipient,
-            signer
-        );
+        emit Claimed(_giver, _token, _transferID, depositNote.amount, _recipient, signer);
     }
 
     // Claims the token
-    function _claimToken(
-        address _token,
-        address payable _recipient,
-        uint256 _amount
-    ) private {
+    function _claimToken(address _token, address payable _recipient, uint256 _amount) private {
         if (_token == NATIVE_TOKEN_ADDRESS) {
             // Send ETH
             return _transferETH(_amount, _recipient);
@@ -442,7 +332,7 @@ contract ClaimableLink is
 
     // Transfers ETH
     function _transferETH(uint256 _amount, address payable _recipient) private {
-        (bool success, ) = _recipient.call{value: _amount}("");
+        (bool success,) = _recipient.call{value: _amount}("");
         require(success, ETHSendFailure(_amount, _recipient));
     }
 }

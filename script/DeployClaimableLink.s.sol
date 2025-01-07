@@ -20,21 +20,13 @@ contract ClaimableLinkDeploy is Script {
         signers[0] = signer;
 
         vm.startBroadcast(deployer);
-        claimableLink = new ClaimableLink{
-            salt: keccak256(abi.encode("ClaimableLink"))
-        }(admin, signers);
+        claimableLink = new ClaimableLink{salt: keccak256(abi.encode("ClaimableLink"))}(admin, signers);
         vm.stopBroadcast();
 
         string memory currentNetwork = Network.getNetworkName(block.chainid);
         string memory jsonData = vm.toString(address(claimableLink));
-        string memory outputFilePath = string.concat(
-            "script/output/ClaimableLink.json"
-        );
-        string memory jsonPath = string.concat(
-            ".",
-            currentNetwork,
-            ".claimableLink"
-        );
+        string memory outputFilePath = string.concat("script/output/ClaimableLink.json");
+        string memory jsonPath = string.concat(".", currentNetwork, ".claimableLink");
 
         vm.writeJson(jsonData, outputFilePath, jsonPath);
 

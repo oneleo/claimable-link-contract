@@ -14,6 +14,7 @@ interface IClaimableLink {
         Claimed, // 2: Deposit claimed
         Cancelled, // 3: Deposit cancelled
         Expired // 4: Deposit expired
+
     }
 
     // ------------------
@@ -50,11 +51,7 @@ interface IClaimableLink {
 
     // Token deposited
     event Deposited(
-        address indexed giver,
-        address indexed token,
-        address indexed transferID,
-        uint256 amount,
-        uint64 expiration
+        address indexed giver, address indexed token, address indexed transferID, uint256 amount, uint64 expiration
     );
 
     // Token claimed
@@ -68,18 +65,10 @@ interface IClaimableLink {
     );
 
     // Deposit cancelled
-    event Cancelled(
-        address indexed giver,
-        address indexed token,
-        address indexed transferID
-    );
+    event Cancelled(address indexed giver, address indexed token, address indexed transferID);
 
     // Deposit refunded
-    event Refunded(
-        address indexed giver,
-        address indexed token,
-        address indexed transferID
-    );
+    event Refunded(address indexed giver, address indexed token, address indexed transferID);
 
     // ------------
     // -- Errors --
@@ -95,16 +84,8 @@ interface IClaimableLink {
     // Deposit-related errors
     error DepositAlreadyMade(address giver, address token, address transferID);
     error DepositNotMade(address giver, address token, address transferID);
-    error DepositTokenMismatch(
-        address giver,
-        address token,
-        address transferID
-    );
-    error DepositSupportsERC20Only(
-        address giver,
-        address token,
-        address transferID
-    );
+    error DepositTokenMismatch(address giver, address token, address transferID);
+    error DepositSupportsERC20Only(address giver, address token, address transferID);
     // error InsufficientETH();
     error ETHAmountMismatch();
 
@@ -124,41 +105,29 @@ interface IClaimableLink {
     // -------------------
 
     // Check if signer is activated
-    function isSignerActivated(
-        address _signer
-    ) external view returns (bool _isActivated);
+    function isSignerActivated(address _signer) external view returns (bool _isActivated);
 
     // Retrieve deposit details
-    function getDeposit(
-        address _giver,
-        address _token,
-        address _transferID
-    ) external view returns (Deposit calldata _deposit);
+    function getDeposit(address _giver, address _token, address _transferID)
+        external
+        view
+        returns (Deposit calldata _deposit);
 
     // Check if user can claim token
-    function isClaimable(
-        address _giver,
-        address _token,
-        address _transferID
-    ) external view returns (bool _isClaimable);
+    function isClaimable(address _giver, address _token, address _transferID)
+        external
+        view
+        returns (bool _isClaimable);
 
     // -------------------
     // -- Set Functions --
     // -------------------
 
     // Update signer list
-    function updateSigners(
-        address[] calldata _signerList,
-        bool[] calldata _isActivatedList
-    ) external;
+    function updateSigners(address[] calldata _signerList, bool[] calldata _isActivatedList) external;
 
     // Deposit token
-    function deposit(
-        address _token,
-        address _transferID,
-        uint256 _amount,
-        uint64 _expiration
-    ) external payable;
+    function deposit(address _token, address _transferID, uint256 _amount, uint64 _expiration) external payable;
 
     // Claim token
     function claim(
@@ -194,9 +163,5 @@ interface IClaimableLink {
     function cancel(address _token, address _transferID) external;
 
     // Refund deposit
-    function refund(
-        address payable _giver,
-        address _token,
-        address _transferID
-    ) external;
+    function refund(address payable _giver, address _token, address _transferID) external;
 }
